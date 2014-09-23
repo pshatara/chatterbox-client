@@ -103,6 +103,7 @@ function removeTags(html) {
 }
 
 
+  debugger;
 $(document).ready(function() {
   app.init();
 })
