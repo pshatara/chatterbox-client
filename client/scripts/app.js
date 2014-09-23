@@ -34,9 +34,14 @@
       $('#chats').empty();
     },
     addMessage: function(message) {
-      var msg = removeTags(message.text);
-      if (!msg) {
-        return;
+      var msg;
+      if (app.Mode !== "TEST") {
+        msg = removeTags(message.text);
+        if (!msg) {
+          return;
+        }
+      } else {
+        msg = message.text;
       }
       $('#chats').append("<p><span class='username'>"+message.username
         +": </span>"+msg+"</p>");
@@ -56,9 +61,12 @@
         // console.log("submitted");
         var name = document.getElementById('nameField');
         var inputMessage = document.getElementById('inputField');
-
-        app.send({username: name.value, text: inputMessage.value});
-        inputMessage = '';
+        var room = document.getElementById('roomField');
+        app.send({
+          username: name.value,
+          text: inputMessage.value,
+          room: room.value
+        });
       });
     },
     handleData: function(data) {
@@ -68,10 +76,7 @@
     }
   };
 
-var test = function(){
-  message = removeTags("<script>alert(\"hi\")</script>");
-  app.addMessage({text: message});
-}
+var test = function() { console.log('here'); };
 
 var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
 
