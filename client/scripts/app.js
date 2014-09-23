@@ -2,10 +2,23 @@
   var app = {
     init: function() {
       app.handleSubmit();
-      // test();
-      app.fetch();
+      // // test();
+      // setInterval.call()
+      app.currentRoom = 'lobby';
+      app.rooms = [];
+      app.friends = [];
+      app.data = [];
+      app.roomsLength = 0;
+      setInterval(function() {
+        while (app.roomsLength < app.rooms.length) {
+          // debugger;
+          app.addRoom(app.rooms[app.roomsLength]);
+          app.roomsLength++;
+        }
+        app.fetch();
+      }, 1000);
       app.mode = "TEST";
-      // app.mode = "GO";
+      app.mode = "GO";
     },
     send: function(message) {
       // debugger;
@@ -23,7 +36,6 @@
       }
     },
     fetch: function() {
-      $('#main').empty;
       $.ajax({
         url: 'https://api.parse.com/1/classes/chatterbox',
         success: app.handleData,
@@ -34,27 +46,38 @@
       $('#chats').empty();
     },
     addMessage: function(message) {
-      var msg;
-      if (app.Mode !== "TEST") {
-        msg = removeTags(message.text);
-        if (!msg) {
-          return;
-        }
-      } else {
-        msg = message.text;
+      var user = _.escape(message.username);
+      var msg = _.escape(message.text);
+      var room = _.escape(message.roomname);
+      if (app.rooms.indexOf(room) === -1) {
+        app.rooms.push(room);
       }
-      $('#chats').append("<p><span class='username'>"+message.username
-        +": </span>"+msg+"</p>");
+      if (room === app.currentRoom || app.currentRoom === 'lobby') {
+        var userSpan = "<div";
+        if (app.friends.indexOf(user) !== -1) {
+          userSpan += " class ='friend'"
+        }
+        userSpan += "><span class='username'>" + user + "</span>: ";
+        var msgSpan = "<span class='msg'>"+msg+"</span>";
+
+        $('#chats').append(userSpan+msgSpan+"</div>");
+      }
       // this.send(message); s
       $('.username').click(function() {
         // console.log('clicked');
-        app.addFriend();
+        app.addFriend($(this).text());
       });
     },
     addRoom: function(room) {
-      $('#roomSelect').append("<span>"+room+"</span>");
+      $('#roomSelect').append("<div class='room'>"+room+"</div>");
+      $('.room').on('click', function() {
+        app.currentRoom = $(this).text();
+      });
     },
-    addFriend: function() {
+    addFriend: function(friend) {
+      if (app.friends.indexOf(friend) === -1) {
+        app.friends.push(friend);
+      }
     },
     handleSubmit: function() {
       $('#send').click(function() {
@@ -62,48 +85,29 @@
         var name = document.getElementById('nameField');
         var inputMessage = document.getElementById('inputField');
         var room = document.getElementById('roomField');
+        // debugger;
         app.send({
           username: name.value,
           text: inputMessage.value,
-          room: room.value
+          roomname: room.value
         });
       });
     },
     handleData: function(data) {
-      for (var i = data.results.length - 1; i >= 0; i--) {
-        app.addMessage(data.results[i]);
+      $('#chats').empty();
+      if(data.results !== app.data) {
+        for (var i = data.results.length - 1; i >= 0; i--) {
+          app.addMessage(data.results[i]);
+        }
+        $('#chats').scrollTop($('#chats')[0].scrollHeight);
+        // debugger;
+        app.data = data.results.splice(0);
       }
     }
   };
 
-var test = function() { console.log('here'); };
-
-var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
-
-var tagOrComment = new RegExp(
-    '<(?:'
-    // Comment body.
-    + '!--(?:(?:-*[^->])*--+|-?)'
-    // Special "raw text" elements whose content should be elided.
-    + '|script\\b' + tagBody + '>[\\s\\S]*?</script\\s*'
-    + '|style\\b' + tagBody + '>[\\s\\S]*?</style\\s*'
-    // Regular name
-    + '|/?[a-z]'
-    + tagBody
-    + ')>',
-    'gi');
-function removeTags(html) {
-  var oldHtml;
-  if (!html) { return; }
-  do {
-    oldHtml = html;
-    html = html.replace(tagOrComment, '');
-  } while (html !== oldHtml);
-  return html.replace(/</g, '&lt;');
-}
 
 
-  debugger;
 $(document).ready(function() {
   app.init();
 })
